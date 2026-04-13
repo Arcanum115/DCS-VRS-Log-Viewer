@@ -1,0 +1,8 @@
+{
+    "dotnet.defaultSolution": "DCSLogViewer.sln",
+    "editor.formatOnSave": true,
+    "files.exclude": {
+        "**/bin": true,
+        "**/obj": true
+    }
+}

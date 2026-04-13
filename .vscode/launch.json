@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "DCS Log Viewer",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/DCSLogViewer/bin/Debug/net8.0-windows/DCSLogViewer.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/DCSLogViewer",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        }
+    ]
+}
