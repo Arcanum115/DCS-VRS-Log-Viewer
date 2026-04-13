@@ -15,7 +15,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly Dispatcher _dispatcher;
 
-    [ObservableProperty] private string _globalStatus = "VRS DCS Manager ready";
+    [ObservableProperty] private string _globalStatus = "VRS // DCS Log Viewer ready";
     [ObservableProperty] private string _activePanel = "Launcher";
 
     // Sub-ViewModels

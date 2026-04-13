@@ -26,7 +26,7 @@ Standalone Windows desktop application with a synthwave-themed UI.
 
 ## Screenshots
 
-*Coming soon*
+![VRS DCS Log Viewer](DCSLogViewer/Assets/Screenshot.png)
 
 ---
 
@@ -99,4 +99,4 @@ DCSLogViewer/
 
 ## License
 
-*Add your license here*
+This project is licensed under the [MIT License](LICENSE). Free to use, modify, and distribute.

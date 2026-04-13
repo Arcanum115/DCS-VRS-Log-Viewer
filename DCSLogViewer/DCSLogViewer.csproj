@@ -19,7 +19,7 @@
 
     <!-- App metadata -->
     <Version>1.0.0</Version>
-    <Product>VRS DCS Manager</Product>
+    <Product>VRS DCS Log Viewer</Product>
     <Description>DCS World manager and log viewer for VRS</Description>
   </PropertyGroup>
 

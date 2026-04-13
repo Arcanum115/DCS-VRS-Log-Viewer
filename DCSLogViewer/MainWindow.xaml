@@ -5,7 +5,7 @@
         xmlns:vm="clr-namespace:DCSLogViewer.ViewModels"
         xmlns:models="clr-namespace:DCSLogViewer.Models"
         xmlns:controls="clr-namespace:DCSLogViewer.Controls"
-        Title="VRS // DCS Manager"
+        Title="VRS // DCS Log Viewer"
         Height="900" Width="1400"
         MinHeight="600" MinWidth="1000"
         Background="{StaticResource BgDarkBrush}"
@@ -105,7 +105,7 @@
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="/Assets/VRS_Logo.png" Width="120" Height="120"
                                RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,0,6" />
-                        <TextBlock Text="DCS MANAGER" FontSize="13" FontWeight="Bold"
+                        <TextBlock Text="DCS LOG VIEWER" FontSize="13" FontWeight="Bold"
                                    Foreground="{StaticResource AccentGreenBrush}" FontFamily="Consolas"
                                    HorizontalAlignment="Center" />
                     </StackPanel>
