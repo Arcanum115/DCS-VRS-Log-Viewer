@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Management;
@@ -28,15 +29,11 @@ public partial class PerformanceViewModel : ObservableObject
     [ObservableProperty] private string _cpuName = "Detecting...";
     [ObservableProperty] private string _cpuCores = "";
     [ObservableProperty] private string _cpuSpeed = "";
-    [ObservableProperty] private string _gpuName = "Detecting...";
-    [ObservableProperty] private string _gpuVram = "";
-    [ObservableProperty] private string _gpuDriver = "";
+    public ObservableCollection<GpuInfo> Gpus { get; } = new();
     [ObservableProperty] private string _ramTotal = "";
     [ObservableProperty] private string _ramAvailable = "";
     [ObservableProperty] private string _osName = "";
     [ObservableProperty] private string _osBuild = "";
-    [ObservableProperty] private string _dlssInfo = "Not detected";
-    [ObservableProperty] private string _dlaaInfo = "Not detected";
     [ObservableProperty] private string _dcsInstallDrive = "";
     [ObservableProperty] private string _dcsInstallFreeSpace = "";
     [ObservableProperty] private string _savedGamesDrive = "";
@@ -107,95 +104,137 @@ public partial class PerformanceViewModel : ObservableObject
 
     // === GPU ===
 
+    private static GpuVendor DetectVendor(string name)
+    {
+        var upper = name.ToUpperInvariant();
+        if (upper.Contains("NVIDIA") || upper.Contains("GEFORCE") || upper.Contains("RTX") || upper.Contains("GTX") || upper.Contains("QUADRO"))
+            return GpuVendor.Nvidia;
+        if (upper.Contains("AMD") || upper.Contains("RADEON") || upper.Contains("RX "))
+            return GpuVendor.Amd;
+        if (upper.Contains("INTEL") || upper.Contains("ARC") || upper.Contains("UHD") || upper.Contains("IRIS"))
+            return GpuVendor.Intel;
+        return GpuVendor.Unknown;
+    }
+
+    private static bool IsDedicatedGpu(string name)
+    {
+        var upper = name.ToUpperInvariant();
+        // NVIDIA discrete GPUs
+        if (upper.Contains("GEFORCE") || upper.Contains("RTX") || upper.Contains("GTX") || upper.Contains("QUADRO") || upper.Contains("TESLA"))
+            return true;
+        // AMD discrete GPUs (Radeon RX, not Vega integrated)
+        if ((upper.Contains("RADEON") && upper.Contains("RX")) || upper.Contains("RADEON PRO"))
+            return true;
+        // Intel Arc discrete
+        if (upper.Contains("ARC") && upper.Contains("INTEL"))
+            return true;
+        return false;
+    }
+
     private void GatherGpuInfo()
     {
+        Gpus.Clear();
+
         try
         {
-            using var searcher = new ManagementObjectSearcher("SELECT Name, AdapterRAM, DriverVersion FROM Win32_VideoController WHERE Availability = 3");
+            using var searcher = new ManagementObjectSearcher(
+                "SELECT Name, AdapterRAM, DriverVersion FROM Win32_VideoController");
             foreach (ManagementObject obj in searcher.Get())
             {
                 var name = obj["Name"]?.ToString() ?? "Unknown";
-                // Skip Microsoft Basic Display Adapter
                 if (name.Contains("Microsoft Basic")) continue;
 
-                GpuName = name;
+                var gpu = new GpuInfo
+                {
+                    Name = name,
+                    DriverVersion = obj["DriverVersion"]?.ToString() ?? "Unknown",
+                    Vendor = DetectVendor(name),
+                    IsDedicated = IsDedicatedGpu(name)
+                };
 
                 var vramBytes = Convert.ToUInt64(obj["AdapterRAM"] ?? 0);
                 if (vramBytes > 0)
                 {
                     var vramGb = vramBytes / (1024.0 * 1024 * 1024);
-                    // WMI caps at 4GB due to uint32 limit — detect and show accordingly
-                    GpuVram = vramGb >= 3.9 ? "4+ GB (WMI limit — likely more)" : $"{vramGb:F1} GB";
-                }
-                else
-                {
-                    GpuVram = "Unknown";
+                    gpu.Vram = vramGb >= 3.9 ? "4+ GB (WMI limit)" : $"{vramGb:F1} GB";
                 }
 
-                GpuDriver = obj["DriverVersion"]?.ToString() ?? "Unknown";
-                break; // Take the first real GPU
+                Gpus.Add(gpu);
             }
 
-            // Try to get accurate VRAM from the registry (NVIDIA/AMD report correctly there)
+            // Mark the primary GPU — prefer PCIe dedicated over integrated
+            var dedicated = Gpus.FirstOrDefault(g => g.IsDedicated);
+            if (dedicated != null)
+            {
+                dedicated.IsPrimary = true;
+            }
+            else if (Gpus.Count > 0)
+            {
+                // No dedicated found — the first GPU is primary (single-GPU system)
+                Gpus[0].IsPrimary = true;
+                Gpus[0].IsDedicated = true; // treat it as the main adapter
+            }
+
+            // Try to get accurate VRAM from the registry
             TryGetAccurateVram();
         }
         catch
         {
-            GpuName = "Unable to detect";
-            GpuVram = "";
-            GpuDriver = "";
+            if (Gpus.Count == 0)
+                Gpus.Add(new GpuInfo { Name = "Unable to detect", IsPrimary = true, IsDedicated = true });
         }
+
+        if (Gpus.Count == 0)
+            Gpus.Add(new GpuInfo { Name = "No GPU detected", IsPrimary = true });
+
+        // Sort so primary/dedicated GPU shows first
+        var sorted = Gpus.OrderByDescending(g => g.IsPrimary).ThenByDescending(g => g.IsDedicated).ToList();
+        Gpus.Clear();
+        foreach (var g in sorted) Gpus.Add(g);
     }
 
     private void TryGetAccurateVram()
     {
         try
         {
-            // Check NVIDIA registry for accurate VRAM
-            using var searcher = new ManagementObjectSearcher(
-                "SELECT AdapterRAM FROM Win32_VideoController WHERE Name LIKE '%NVIDIA%' OR Name LIKE '%AMD%' OR Name LIKE '%Radeon%'");
-            foreach (ManagementObject obj in searcher.Get())
-            {
-                // Try the DX adapter method via DXGI if available
-                break;
-            }
+            using var displayKey = Registry.LocalMachine.OpenSubKey(
+                @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}");
+            if (displayKey == null) return;
 
-            // Alternative: Check Display adapters in registry for qwMemorySize
-            using var displayKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}");
-            if (displayKey != null)
+            foreach (var subKeyName in displayKey.GetSubKeyNames())
             {
-                foreach (var subKeyName in displayKey.GetSubKeyNames())
+                if (!int.TryParse(subKeyName, out _)) continue;
+                using var subKey = displayKey.OpenSubKey(subKeyName);
+                if (subKey == null) continue;
+
+                var desc = subKey.GetValue("DriverDesc")?.ToString() ?? "";
+                if (string.IsNullOrEmpty(desc) || desc.Contains("Microsoft Basic")) continue;
+
+                // Find the matching GPU in our list
+                var matchingGpu = Gpus.FirstOrDefault(g =>
+                    desc.Contains(g.Name, StringComparison.OrdinalIgnoreCase) ||
+                    g.Name.Contains(desc, StringComparison.OrdinalIgnoreCase));
+                if (matchingGpu == null) continue;
+
+                var memSize = subKey.GetValue("HardwareInformation.qwMemorySize");
+                if (memSize is long memLong && memLong > 0)
                 {
-                    if (!int.TryParse(subKeyName, out _)) continue;
-                    using var subKey = displayKey.OpenSubKey(subKeyName);
-                    if (subKey == null) continue;
+                    matchingGpu.Vram = $"{memLong / (1024.0 * 1024 * 1024):F0} GB";
+                    continue;
+                }
 
-                    var desc = subKey.GetValue("DriverDesc")?.ToString() ?? "";
-                    if (string.IsNullOrEmpty(desc) || desc.Contains("Microsoft Basic")) continue;
-
-                    var memSize = subKey.GetValue("HardwareInformation.qwMemorySize");
-                    if (memSize is long memLong && memLong > 0)
+                var memSizeReg = subKey.GetValue("HardwareInformation.MemorySize");
+                if (memSizeReg is byte[] memBytes && memBytes.Length >= 8)
+                {
+                    var memVal = BitConverter.ToInt64(memBytes, 0);
+                    if (memVal > 0)
                     {
-                        var gb = memLong / (1024.0 * 1024 * 1024);
-                        GpuVram = $"{gb:F0} GB";
-                        return;
-                    }
-
-                    var memSizeReg = subKey.GetValue("HardwareInformation.MemorySize");
-                    if (memSizeReg is byte[] memBytes && memBytes.Length >= 8)
-                    {
-                        var memVal = BitConverter.ToInt64(memBytes, 0);
-                        if (memVal > 0)
-                        {
-                            var gb = memVal / (1024.0 * 1024 * 1024);
-                            GpuVram = $"{gb:F0} GB";
-                            return;
-                        }
+                        matchingGpu.Vram = $"{memVal / (1024.0 * 1024 * 1024):F0} GB";
                     }
                 }
             }
         }
-        catch { /* Keep WMI value */ }
+        catch { /* Keep WMI values */ }
     }
 
     // === MEMORY ===
@@ -268,16 +307,41 @@ public partial class PerformanceViewModel : ObservableObject
         }
     }
 
-    // === DLSS / DLAA ===
+    // === UPSCALING DETECTION (DLSS / FSR / XeSS) ===
 
     private void DetectDlss()
     {
-        var dlss = DetectDllVersion("nvngx_dlss.dll", "DLSS");
-        if (dlss == null) dlss = DetectDllVersion("nvngx.dll", "DLSS");
-        DlssInfo = dlss ?? "Not found in DCS";
+        var primary = Gpus.FirstOrDefault(g => g.IsPrimary);
+        if (primary == null) return;
 
-        var dlaa = DetectDllVersion("nvngx_dlaa.dll", "DLAA");
-        DlaaInfo = dlaa ?? "Not found in DCS";
+        switch (primary.Vendor)
+        {
+            case GpuVendor.Nvidia:
+                var dlss = DetectDllVersion("nvngx_dlss.dll", "DLSS");
+                if (dlss == null) dlss = DetectDllVersion("nvngx.dll", "DLSS");
+                primary.DlssInfo = dlss ?? "Not found in DCS";
+
+                var dlaa = DetectDllVersion("nvngx_dlaa.dll", "DLAA");
+                primary.DlaaInfo = dlaa ?? "Not found in DCS";
+                break;
+
+            case GpuVendor.Amd:
+                // FSR is typically shader-based (no separate DLL), but check for amd_fidelityfx DLLs
+                var fsr = DetectDllVersion("amd_fidelityfx_dx12.dll", "FSR")
+                       ?? DetectDllVersion("amd_fidelityfx_vk.dll", "FSR")
+                       ?? DetectDllVersion("ffx_fsr2_api_x64.dll", "FSR 2")
+                       ?? DetectDllVersion("ffx_fsr3upscaler_x64.dll", "FSR 3");
+                primary.FsrInfo = fsr ?? "Shader-based (driver supported)";
+
+                // RSR (Radeon Super Resolution) is driver-level, always available on RDNA+
+                primary.RsrInfo = "Driver-level (Adrenalin)";
+                break;
+
+            case GpuVendor.Intel:
+                var xess = DetectDllVersion("libxess.dll", "XeSS");
+                primary.XessInfo = xess ?? "Not found in DCS";
+                break;
+        }
     }
 
     private string? DetectDllVersion(string dllName, string label)

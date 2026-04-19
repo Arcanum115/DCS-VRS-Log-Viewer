@@ -598,44 +598,101 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- === GPU === -->
-                    <Border Style="{StaticResource CardBorder}" Padding="20,16">
-                        <StackPanel>
-                            <TextBlock Text="GRAPHICS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBlueBrush}"
-                                       Margin="0,0,0,10" />
-                            <TextBlock Text="{Binding Performance.GpuName}" FontSize="16" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8" TextWrapping="Wrap" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="VRAM" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding Performance.GpuVram}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Driver Version" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding Performance.GpuDriver}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
-                                </StackPanel>
-                            </Grid>
-                            <!-- DLSS / DLAA row -->
-                            <Grid Margin="0,10,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="DLSS" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding Performance.DlssInfo}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="DLAA" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding Performance.DlaaInfo}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                    <!-- === GPU(s) === -->
+                    <ItemsControl ItemsSource="{Binding Performance.Gpus}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource CardBorder}" Padding="20,16">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="GRAPHICS" FontSize="11" FontWeight="Bold"
+                                                       Foreground="{StaticResource AccentBlueBrush}" />
+                                            <TextBlock Grid.Column="1" FontSize="10" HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center" Margin="8,0,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="" />
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsPrimary}" Value="True">
+                                                                <Setter Property="Text" Value="PRIMARY (PCIe)" />
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsDedicated}" Value="False">
+                                                                <Setter Property="Text" Value="INTEGRATED (iGPU)" />
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                        <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,10,0,8"
+                                                   TextWrapping="Wrap" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="VRAM" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding Vram}" FontSize="14"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="Driver Version" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding DriverVersion}" FontSize="14"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <!-- Upscaling tech row — only on primary GPU -->
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.Style>
+                                                <Style TargetType="Grid">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPrimary}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Style>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding UpscaleLabel1}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding UpscaleValue1}" FontSize="14"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasSecondUpscale}" Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+                                                <TextBlock Text="{Binding UpscaleLabel2}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding UpscaleValue2}" FontSize="14"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                     <!-- === MEMORY === -->
                     <Border Style="{StaticResource CardBorder}" Padding="20,16">
