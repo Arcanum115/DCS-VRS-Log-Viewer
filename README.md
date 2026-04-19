@@ -16,8 +16,6 @@ Standalone Windows desktop application with a synthwave-themed UI.
 
 - **External Tools Manager** - Add, launch, and manage third-party DCS utilities (DXVK, DLSS Swapper, DCS Updater, Tacview, SRS, LotATC, etc.) with one-click download links.
 
-- **Performance Presets** - Quick-apply graphics configuration presets for DCS.
-
 - **DXVK Integration** - Check DXVK status and manage installation.
 
 - **Animated Background** - Synthwave/retrowave scene with perspective grid, neon sun, mountains, palm trees, military aircraft combat (jets, helicopters, tracers, missiles, dogfights), and SAM sites with spinning radar and missile launches.
