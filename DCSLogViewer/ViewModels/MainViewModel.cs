@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -39,6 +40,9 @@ public partial class MainViewModel : ObservableObject
         Launcher = new LauncherViewModel(Config);
         Performance = new PerformanceViewModel(Config);
 
+        // Refresh disk info when user changes DCS path
+        Launcher.DcsPathChanged += () => Performance.GatherDiskInfo();
+
         RefreshProfiles();
     }
 
@@ -54,8 +58,21 @@ public partial class MainViewModel : ObservableObject
             "Launcher" => "Launch DCS and your tools",
             "LogViewer" => "Real-time log monitoring",
             "Performance" => "System information and DCS details",
+            "FpsGuide" => "DCS optimization with DCS-Max",
+            "WinTweaks" => "Windows optimization with WinUtil by Chris Titus Tech",
             _ => ""
         };
+    }
+
+    [RelayCommand]
+    private void OpenUrl(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch { /* Silently fail if browser can't open */ }
     }
 
     // === LOG VIEWER (preserved from original) ===

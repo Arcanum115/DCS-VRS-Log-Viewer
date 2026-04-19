@@ -36,8 +36,16 @@ public partial class PerformanceViewModel : ObservableObject
     [ObservableProperty] private string _osBuild = "";
     [ObservableProperty] private string _dcsInstallDrive = "";
     [ObservableProperty] private string _dcsInstallFreeSpace = "";
+    [ObservableProperty] private string _dcsInstallDriveType = "";
+    [ObservableProperty] private string _dcsInstallDriveFormat = "";
+    [ObservableProperty] private double _dcsInstallDriveUsagePercent;
+    [ObservableProperty] private string _dcsInstallDriveUsed = "";
     [ObservableProperty] private string _savedGamesDrive = "";
     [ObservableProperty] private string _savedGamesFreeSpace = "";
+    [ObservableProperty] private string _savedGamesDriveType = "";
+    [ObservableProperty] private string _savedGamesDriveFormat = "";
+    [ObservableProperty] private double _savedGamesDriveUsagePercent;
+    [ObservableProperty] private string _savedGamesDriveUsed = "";
     [ObservableProperty] private string _pageFileInfo = "";
     [ObservableProperty] private string _shaderCacheSize = "";
     [ObservableProperty] private string _terrainCacheSize = "";
@@ -57,6 +65,24 @@ public partial class PerformanceViewModel : ObservableObject
         StatusMessage = "Refreshing...";
         GatherAllInfo();
         StatusMessage = "System info refreshed.";
+    }
+
+    [RelayCommand]
+    private void OpenInstallDrive()
+    {
+        var path = _config.DcsInstallPath;
+        if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+            Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
+    }
+
+    [RelayCommand]
+    private void OpenSavedGamesDrive()
+    {
+        var path = Path.Combine(_config.DcsSavedGamesPath, _config.DcsVariant);
+        if (Directory.Exists(path))
+            Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
+        else if (Directory.Exists(_config.DcsSavedGamesPath))
+            Process.Start(new ProcessStartInfo("explorer.exe", _config.DcsSavedGamesPath) { UseShellExecute = true });
     }
 
     private void GatherAllInfo()
@@ -368,19 +394,41 @@ public partial class PerformanceViewModel : ObservableObject
 
     // === DISK ===
 
-    private void GatherDiskInfo()
+    /// <summary>
+    /// Public so it can be called when the user changes the DCS install path.
+    /// </summary>
+    public void GatherDiskInfo()
     {
         try
         {
-            if (!string.IsNullOrEmpty(_config.DcsInstallPath))
+            var installPath = _config.DcsInstallPath;
+
+            // Auto-detect if path is empty
+            if (string.IsNullOrEmpty(installPath))
             {
-                var installRoot = Path.GetPathRoot(_config.DcsInstallPath);
+                installPath = TryAutoDetectDcsPath();
+                if (!string.IsNullOrEmpty(installPath))
+                {
+                    _config.DcsInstallPath = installPath;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(installPath))
+            {
+                var installRoot = Path.GetPathRoot(installPath);
                 if (installRoot != null)
                 {
-                    var drive = new DriveInfo(installRoot);
-                    DcsInstallDrive = $"{drive.Name.TrimEnd('\\')} ({drive.DriveType})";
-                    DcsInstallFreeSpace = $"{drive.AvailableFreeSpace / (1024.0 * 1024 * 1024):F1} GB free of {drive.TotalSize / (1024.0 * 1024 * 1024):F0} GB";
+                    PopulateDriveInfo(installRoot, isInstallDrive: true);
                 }
+            }
+            else
+            {
+                DcsInstallDrive = "Not configured";
+                DcsInstallFreeSpace = "Set DCS path in Launcher tab";
+                DcsInstallDriveType = "";
+                DcsInstallDriveFormat = "";
+                DcsInstallDriveUsagePercent = 0;
+                DcsInstallDriveUsed = "";
             }
 
             var savedGamesPath = Path.Combine(_config.DcsSavedGamesPath, _config.DcsVariant);
@@ -389,17 +437,115 @@ public partial class PerformanceViewModel : ObservableObject
                 var sgRoot = Path.GetPathRoot(savedGamesPath);
                 if (sgRoot != null)
                 {
-                    var drive = new DriveInfo(sgRoot);
-                    SavedGamesDrive = $"{drive.Name.TrimEnd('\\')} ({drive.DriveType})";
-                    SavedGamesFreeSpace = $"{drive.AvailableFreeSpace / (1024.0 * 1024 * 1024):F1} GB free of {drive.TotalSize / (1024.0 * 1024 * 1024):F0} GB";
+                    PopulateDriveInfo(sgRoot, isInstallDrive: false);
                 }
             }
         }
         catch
         {
-            DcsInstallDrive = "Unknown";
-            SavedGamesDrive = "Unknown";
+            DcsInstallDrive = "Unable to detect";
+            SavedGamesDrive = "Unable to detect";
         }
+    }
+
+    private void PopulateDriveInfo(string root, bool isInstallDrive)
+    {
+        var drive = new DriveInfo(root);
+        if (!drive.IsReady) return;
+
+        var label = string.IsNullOrWhiteSpace(drive.VolumeLabel) ? "Local Disk" : drive.VolumeLabel;
+        var letter = drive.Name.TrimEnd('\\');
+        var totalGb = drive.TotalSize / (1024.0 * 1024 * 1024);
+        var freeGb = drive.AvailableFreeSpace / (1024.0 * 1024 * 1024);
+        var usedGb = totalGb - freeGb;
+        var usagePercent = totalGb > 0 ? (usedGb / totalGb) * 100 : 0;
+        var driveFormat = drive.DriveFormat; // NTFS, exFAT, etc.
+        var mediaType = DetectMediaType(letter);
+
+        if (isInstallDrive)
+        {
+            DcsInstallDrive = $"{letter} ({label})";
+            DcsInstallFreeSpace = $"{freeGb:F1} GB free of {totalGb:F0} GB";
+            DcsInstallDriveType = mediaType;
+            DcsInstallDriveFormat = driveFormat;
+            DcsInstallDriveUsagePercent = usagePercent;
+            DcsInstallDriveUsed = $"{usedGb:F0} GB used ({usagePercent:F0}%)";
+        }
+        else
+        {
+            SavedGamesDrive = $"{letter} ({label})";
+            SavedGamesFreeSpace = $"{freeGb:F1} GB free of {totalGb:F0} GB";
+            SavedGamesDriveType = mediaType;
+            SavedGamesDriveFormat = driveFormat;
+            SavedGamesDriveUsagePercent = usagePercent;
+            SavedGamesDriveUsed = $"{usedGb:F0} GB used ({usagePercent:F0}%)";
+        }
+    }
+
+    private static string DetectMediaType(string driveLetter)
+    {
+        try
+        {
+            // Map drive letter → physical disk → media type
+            var letter = driveLetter.TrimEnd(':');
+            using var partSearch = new ManagementObjectSearcher(
+                $"ASSOCIATORS OF {{Win32_LogicalDisk.DeviceID='{letter}:'}} WHERE AssocClass=Win32_LogicalDiskToPartition");
+            foreach (ManagementObject partition in partSearch.Get())
+            {
+                var diskIndex = partition["DiskIndex"];
+                if (diskIndex == null) continue;
+
+                using var diskSearch = new ManagementObjectSearcher(
+                    $"SELECT MediaType FROM Win32_DiskDrive WHERE Index={diskIndex}");
+                foreach (ManagementObject disk in diskSearch.Get())
+                {
+                    var mediaType = disk["MediaType"]?.ToString() ?? "";
+                    if (mediaType.Contains("SSD", StringComparison.OrdinalIgnoreCase) ||
+                        mediaType.Contains("Solid", StringComparison.OrdinalIgnoreCase))
+                        return "SSD";
+                    if (mediaType.Contains("HDD", StringComparison.OrdinalIgnoreCase) ||
+                        mediaType.Contains("Fixed", StringComparison.OrdinalIgnoreCase))
+                        return "HDD";
+                }
+            }
+
+            // Fallback: use MSFT_PhysicalDisk via WMI (works on most modern systems)
+            using var physSearch = new ManagementObjectSearcher(
+                @"\\.\ROOT\Microsoft\Windows\Storage",
+                "SELECT MediaType FROM MSFT_PhysicalDisk");
+            foreach (ManagementObject phys in physSearch.Get())
+            {
+                var mt = Convert.ToUInt16(phys["MediaType"]);
+                // 3 = HDD, 4 = SSD, 5 = SCM
+                if (mt == 4) return "SSD";
+                if (mt == 3) return "HDD";
+                if (mt == 5) return "NVMe";
+            }
+        }
+        catch { /* Fallback */ }
+
+        return "Fixed";
+    }
+
+    private static string? TryAutoDetectDcsPath()
+    {
+        string[] commonPaths =
+        {
+            @"C:\Program Files\Eagle Dynamics\DCS World",
+            @"C:\Program Files\Eagle Dynamics\DCS World OpenBeta",
+            @"D:\DCS World",
+            @"D:\Program Files\Eagle Dynamics\DCS World",
+            @"E:\DCS World",
+            @"C:\Games\DCS World"
+        };
+
+        foreach (var path in commonPaths)
+        {
+            if (Directory.Exists(path) && File.Exists(Path.Combine(path, "bin", "DCS.exe")))
+                return path;
+        }
+
+        return null;
     }
 
     // === DXVK ===

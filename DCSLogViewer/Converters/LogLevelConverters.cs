@@ -106,3 +106,26 @@ public class BoolToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => value is Visibility.Visible;
 }
+
+/// <summary>
+/// Converts a percentage (0-100) to a pixel width for drive usage bars.
+/// Uses a fixed max width of 200px so the bar fits within the card.
+/// </summary>
+public class PercentToWidthConverter : IValueConverter
+{
+    public static readonly PercentToWidthConverter Instance = new();
+
+    private const double MaxBarWidth = 200.0;
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is double percent)
+        {
+            return Math.Max(0, Math.Min(MaxBarWidth, (percent / 100.0) * MaxBarWidth));
+        }
+        return 0.0;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}

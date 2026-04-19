@@ -57,6 +57,28 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void CopyWinUtilCommand_Click(object sender, RoutedEventArgs e)
+    {
+        Clipboard.SetText("irm \"https://christitus.com/win\" | iex");
+
+        // Briefly change button text to confirm
+        if (sender is Button btn)
+        {
+            var original = btn.Content;
+            btn.Content = "Copied!";
+            var timer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(2)
+            };
+            timer.Tick += (_, _) =>
+            {
+                btn.Content = original;
+                timer.Stop();
+            };
+            timer.Start();
+        }
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         // Save config

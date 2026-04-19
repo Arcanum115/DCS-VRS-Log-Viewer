@@ -119,6 +119,10 @@
                                  Command="{Binding NavigateToCommand}" CommandParameter="LogViewer" />
                     <RadioButton Content="System &amp; DCS Info" Style="{StaticResource SidebarBtn}"
                                  Command="{Binding NavigateToCommand}" CommandParameter="Performance" />
+                    <RadioButton Content="DCS Optimization" Style="{StaticResource SidebarBtn}"
+                                 Command="{Binding NavigateToCommand}" CommandParameter="FpsGuide" />
+                    <RadioButton Content="Windows Tweaks" Style="{StaticResource SidebarBtn}"
+                                 Command="{Binding NavigateToCommand}" CommandParameter="WinTweaks" />
                 </StackPanel>
 
                 <!-- Bottom info -->
@@ -769,24 +773,129 @@
                             </Grid>
 
                             <!-- Drive info -->
-                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="14,10" Margin="0,6,0,0">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Install Drive" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                                        <TextBlock Text="{Binding Performance.DcsInstallDrive}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
-                                        <TextBlock Text="{Binding Performance.DcsInstallFreeSpace}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="Saved Games Drive" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                                        <TextBlock Text="{Binding Performance.SavedGamesDrive}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" />
-                                        <TextBlock Text="{Binding Performance.SavedGamesFreeSpace}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- DCS Install Drive (clickable) -->
+                                <Button Grid.Column="0" Cursor="Hand"
+                                        Command="{Binding Performance.OpenInstallDriveCommand}"
+                                        ToolTip="Open DCS install folder in Explorer">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="14,10"
+                                                    x:Name="DriveCard">
+                                                <StackPanel>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="DCS Install Drive" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Performance.DcsInstallDriveType}" FontSize="10" FontWeight="Bold"
+                                                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,0,6,0" />
+                                                            <TextBlock Text="{Binding Performance.DcsInstallDriveFormat}" FontSize="10"
+                                                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Performance.DcsInstallDrive}" FontSize="14" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0" />
+                                                    <!-- Usage bar -->
+                                                    <Grid Margin="0,8,0,0" Height="6">
+                                                        <Border Background="#FF2A2440" CornerRadius="3" />
+                                                        <Border CornerRadius="3" HorizontalAlignment="Left"
+                                                                Width="{Binding Performance.DcsInstallDriveUsagePercent, Converter={x:Static converters:PercentToWidthConverter.Instance}}">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                    <GradientStop Color="#FF00AADD" Offset="0" />
+                                                                    <GradientStop Color="#FF0088BB" Offset="1" />
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                    </Grid>
+                                                    <Grid Margin="0,4,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Performance.DcsInstallDriveUsed}" FontSize="10"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Performance.DcsInstallFreeSpace}" FontSize="10"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="DriveCard" Property="Background" Value="#FF2E2848" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <!-- Saved Games Drive (clickable) -->
+                                <Button Grid.Column="2" Cursor="Hand"
+                                        Command="{Binding Performance.OpenSavedGamesDriveCommand}"
+                                        ToolTip="Open Saved Games folder in Explorer">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="14,10"
+                                                    x:Name="DriveCard">
+                                                <StackPanel>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Saved Games Drive" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Performance.SavedGamesDriveType}" FontSize="10" FontWeight="Bold"
+                                                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,0,6,0" />
+                                                            <TextBlock Text="{Binding Performance.SavedGamesDriveFormat}" FontSize="10"
+                                                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Performance.SavedGamesDrive}" FontSize="14" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0" />
+                                                    <!-- Usage bar -->
+                                                    <Grid Margin="0,8,0,0" Height="6">
+                                                        <Border Background="#FF2A2440" CornerRadius="3" />
+                                                        <Border CornerRadius="3" HorizontalAlignment="Left"
+                                                                Width="{Binding Performance.SavedGamesDriveUsagePercent, Converter={x:Static converters:PercentToWidthConverter.Instance}}">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                    <GradientStop Color="#FFFF2D78" Offset="0" />
+                                                                    <GradientStop Color="#FFCC2060" Offset="1" />
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                    </Grid>
+                                                    <Grid Margin="0,4,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Performance.SavedGamesDriveUsed}" FontSize="10"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Performance.SavedGamesFreeSpace}" FontSize="10"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="DriveCard" Property="Background" Value="#FF2E2848" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
                         </StackPanel>
                     </Border>
 
@@ -858,6 +967,512 @@
                     <!-- Status message -->
                     <TextBlock Text="{Binding Performance.StatusMessage}" FontSize="12"
                                Foreground="{StaticResource AccentGreenBrush}" Margin="0,10,0,0" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ======== FPS OPTIMIZATION PANEL ======== -->
+        <Grid Grid.Column="1" Grid.Row="0">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ActivePanel}" Value="FpsGuide">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,20">
+                <StackPanel MaxWidth="900">
+
+                    <!-- Header -->
+                    <TextBlock Text="DCS OPTIMIZATION" Style="{StaticResource SectionHeader}" Margin="0,0,0,4" />
+                    <TextBlock Text="Improve your DCS World frame rates and reduce stutters"
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,20" />
+
+                    <!-- DCS-Max Card -->
+                    <Border Style="{StaticResource CardBorder}" Padding="24,20">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="DCS-Max" FontSize="22" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentBlueBrush}" />
+                                <TextBlock Grid.Column="1" Text="FREE &amp; OPEN SOURCE" FontSize="10" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" VerticalAlignment="Center" />
+                            </Grid>
+                            <TextBlock Text="The Ultimate DCS World Performance Optimization Suite"
+                                       FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,16" />
+
+                            <!-- What it does -->
+                            <TextBlock Text="WHAT IT DOES" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,0,0,8" />
+
+                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="16,12" Margin="0,0,0,6">
+                                <StackPanel>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}">
+                                        DCS-Max automates the tedious process of finding your best DCS settings. It benchmarks
+                                        128+ graphics setting combinations, disables Windows background services that cause stutters,
+                                        and provides safe backup/restore for everything it touches.
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Key Features -->
+                            <TextBlock Text="KEY FEATURES" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,16,0,8" />
+
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" Grid.Column="0" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="0,0,4,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Automated Benchmarking" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Tests 128+ DCS graphics combinations with CapFrameX — find your optimal settings automatically"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="0" Grid.Column="1" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="4,0,0,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Windows Optimization" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Disables unnecessary services, tasks, and telemetry that cause frame drops and stutters"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="0,0,4,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Safe Backups" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Full backup and restore for DCS configs, Windows registry, services, and scheduled tasks"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="4,0,0,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Graphical Interface" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Modern UI — no command line needed. Visual dashboard, one-click backup, and easy optimization"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Grid.Column="0" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="0,0,4,4">
+                                    <StackPanel>
+                                        <TextBlock Text="VR Support" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="VR-specific optimization settings and Pimax Play integration for headset users"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Grid.Column="1" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="4,0,0,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Cache Cleaning" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Clears NVIDIA shader cache, DX cache, and DCS caches to fix stale shader issues"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Typical Results -->
+                            <TextBlock Text="TYPICAL RESULTS" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,12,0,8" />
+
+                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="16,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                        <TextBlock Text="15-30%" FontSize="18" FontWeight="Bold"
+                                                   Foreground="{StaticResource AccentGreenBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="FPS Increase" FontSize="10"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="Less" FontSize="18" FontWeight="Bold"
+                                                   Foreground="{StaticResource AccentGreenBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="Stuttering" FontSize="10"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                        <TextBlock Text="Faster" FontSize="18" FontWeight="Bold"
+                                                   Foreground="{StaticResource AccentGreenBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="Mission Loading" FontSize="10"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                        <TextBlock Text="Stable" FontSize="18" FontWeight="Bold"
+                                                   Foreground="{StaticResource AccentGreenBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="VR Performance" FontSize="10"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Requirements -->
+                            <TextBlock Text="REQUIREMENTS" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,16,0,8" />
+
+                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock FontSize="12" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap">
+                                        Windows 10/11 (64-bit) with Admin privileges. DCS-Max will also prompt you to install
+                                        AutoHotkey v2, CapFrameX, and Notepad++ if needed — all free tools.
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Safety Note -->
+                            <TextBlock Text="SAFETY" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,16,0,8" />
+
+                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="16,12">
+                                <TextBlock FontSize="12" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap">
+                                    DCS-Max creates full backups before changing anything. Registry, services, scheduled tasks,
+                                    and DCS configs are all backed up with one-click restore scripts. Always create a Windows
+                                    System Restore point before running optimizations.
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Action Buttons -->
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button Content="Download DCS-Max" Style="{StaticResource ToolbarButton}"
+                                        FontSize="14" Padding="20,10" FontWeight="SemiBold"
+                                        Foreground="#FF00CCFF"
+                                        Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="https://github.com/thomas-barrios/DCS-Max/releases" />
+                                <Button Content="View on GitHub" Style="{StaticResource ToolbarButton}"
+                                        FontSize="13" Padding="16,10"
+                                        Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="https://github.com/thomas-barrios/DCS-Max/tree/master" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Quick Start -->
+                    <Border Style="{StaticResource CardBorder}" Padding="24,20" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="QUICK START" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,0,0,10" />
+
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="1." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Download the latest release ZIP from the button above and extract it to a folder
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Text="2." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Create a Windows System Restore point (critical safety step)
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="2" Text="3." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Double-click DCS-Max.bat to launch the graphical interface
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="3" Text="4." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Use the Backup feature first, then run a baseline benchmark
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="4" Text="5." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap">
+                                    Apply optimizations and re-benchmark to compare results in CapFrameX
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ======== WINDOWS TWEAKS PANEL ======== -->
+        <Grid Grid.Column="1" Grid.Row="0">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ActivePanel}" Value="WinTweaks">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,20">
+                <StackPanel MaxWidth="900">
+
+                    <!-- Header -->
+                    <TextBlock Text="WINDOWS OPTIMIZATION" Style="{StaticResource SectionHeader}" Margin="0,0,0,4" />
+                    <TextBlock Text="Debloat, tweak, and optimize Windows for better gaming performance"
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,20" />
+
+                    <!-- WinUtil Card -->
+                    <Border Style="{StaticResource CardBorder}" Padding="24,20">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="WinUtil" FontSize="22" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentBlueBrush}" />
+                                <TextBlock Grid.Column="1" Text="by Chris Titus Tech" FontSize="11"
+                                           Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                            </Grid>
+                            <TextBlock Text="The Ultimate Windows Utility — Install, Debloat, Tweak, and Fix"
+                                       FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,16" />
+
+                            <!-- What it does -->
+                            <TextBlock Text="WHAT IT DOES" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,0,0,8" />
+
+                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="16,12" Margin="0,0,0,6">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}">
+                                    WinUtil is a free PowerShell utility that streamlines Windows setup and optimization.
+                                    It can bulk-install programs, remove bloatware, apply performance tweaks, fix Windows
+                                    Update issues, and configure privacy settings — all through a clean graphical interface.
+                                    No installation needed, just one command.
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Key Features -->
+                            <TextBlock Text="KEY FEATURES" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,16,0,8" />
+
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" Grid.Column="0" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="0,0,4,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Bulk App Install" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Install dozens of popular apps at once using winget — browsers, tools, runtimes, all in a few clicks"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="0" Grid.Column="1" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="4,0,0,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Windows Debloat" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Remove pre-installed bloatware, disable telemetry, and strip unnecessary Windows features"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="0,0,4,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Performance Tweaks" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Apply gaming-focused optimizations to services, scheduled tasks, power plans, and network settings"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="4,0,0,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Windows Update Fix" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Reset and repair broken Windows Update components when updates fail or get stuck"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Grid.Column="0" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="0,0,4,4">
+                                    <StackPanel>
+                                        <TextBlock Text="Privacy Controls" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Disable tracking, telemetry, Cortana, and other privacy-invasive Windows features"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Grid.Column="1" Background="{StaticResource BgDarkBrush}"
+                                        CornerRadius="4" Padding="12,10" Margin="4,0,0,4">
+                                    <StackPanel>
+                                        <TextBlock Text="No Install Required" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Runs directly from PowerShell with a single command — nothing to download or install first"
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Launch Command -->
+                            <TextBlock Text="ONE-LINE LAUNCH" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,16,0,8" />
+
+                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock Text="Open PowerShell as Administrator and paste this command:"
+                                               FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#FF1A1430" CornerRadius="4" Padding="14,10">
+                                            <TextBox Text="irm &quot;https://christitus.com/win&quot; | iex"
+                                                     FontSize="14" FontWeight="SemiBold" FontFamily="Consolas"
+                                                     Foreground="{StaticResource AccentGreenBrush}"
+                                                     Background="Transparent" BorderThickness="0"
+                                                     IsReadOnly="True" />
+                                        </Border>
+                                        <Button Grid.Column="1" Content="Copy" Style="{StaticResource ToolbarButton}"
+                                                FontSize="12" Padding="14,8" Margin="6,0,0,0"
+                                                Click="CopyWinUtilCommand_Click" />
+                                    </Grid>
+                                    <TextBlock Text="This downloads and runs the latest stable version directly."
+                                               FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Safety Note -->
+                            <TextBlock Text="GOOD TO KNOW" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,16,0,8" />
+
+                            <Border Background="{StaticResource BgDarkBrush}" CornerRadius="4" Padding="16,12">
+                                <TextBlock FontSize="12" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap">
+                                    WinUtil must run as Administrator since it modifies system-level settings. It is open
+                                    source with thousands of contributors reviewing the code. Create a System Restore point
+                                    before applying tweaks so you can easily roll back any changes you don't like.
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Action Buttons -->
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button Content="View on GitHub" Style="{StaticResource ToolbarButton}"
+                                        FontSize="14" Padding="20,10" FontWeight="SemiBold"
+                                        Foreground="#FF00CCFF"
+                                        Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="https://github.com/ChrisTitusTech/winutil" />
+                                <Button Content="Documentation" Style="{StaticResource ToolbarButton}"
+                                        FontSize="13" Padding="16,10"
+                                        Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="https://christitustech.github.io/winutil/" />
+                                <Button Content="YouTube Tutorial" Style="{StaticResource ToolbarButton}"
+                                        FontSize="13" Padding="16,10"
+                                        Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="https://www.youtube.com/watch?v=6UQZ5oQg8XA" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Quick Start -->
+                    <Border Style="{StaticResource CardBorder}" Padding="24,20" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="QUICK START" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBlueBrush}" Margin="0,0,0,10" />
+
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="1." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Right-click Start Menu and open "Terminal (Admin)" or "PowerShell (Admin)"
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Text="2." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Paste the launch command above and press Enter — the WinUtil GUI will open
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="2" Text="3." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Use the Tweaks tab to select gaming and performance optimizations you want
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="3" Text="4." FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentGreenBrush}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap">
+                                    Click "Run Tweaks" and restart when prompted — that's it
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
                 </StackPanel>
             </ScrollViewer>
         </Grid>

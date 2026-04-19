@@ -21,6 +21,9 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] private bool _isDcsRunning;
     [ObservableProperty] private string _statusMessage = "";
 
+    /// <summary>Invoked when the DCS install path changes so other ViewModels can react.</summary>
+    public event Action? DcsPathChanged;
+
     public ObservableCollection<ExternalTool> Tools { get; } = new();
 
     public LauncherViewModel(AppConfig config)
@@ -172,6 +175,7 @@ public partial class LauncherViewModel : ObservableObject
                 _config.DcsInstallPath = dir;
                 _config.Save();
                 UpdateDcsStatus();
+                DcsPathChanged?.Invoke();
                 StatusMessage = $"DCS path set to: {dir}";
             }
         }
